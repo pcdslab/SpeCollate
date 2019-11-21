@@ -2,6 +2,8 @@
 /output
 /.ipynb_checkpoints
 **/[Ss]cratch*
+/.idea
+/notebook
 Scratch.ipynb
 scratch.py
 test.py
