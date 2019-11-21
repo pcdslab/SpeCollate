@@ -1,2 +1,8 @@
 /data
-/models
+/output
+/.ipynb_checkpoints
+**/[Ss]cratch*
+Scratch.ipynb
+scratch.py
+test.py
+Untitled.ipynb
