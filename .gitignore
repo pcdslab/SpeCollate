@@ -4,6 +4,7 @@
 **/[Ss]cratch*
 /.idea
 /notebook
+/lstm
 Scratch.ipynb
 scratch.py
 test.py
