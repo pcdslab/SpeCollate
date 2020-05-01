@@ -10,6 +10,8 @@ scratch.py
 test.py
 Untitled.ipynb
 */.ipynb_checkpoints
+/.vscode
+*/__pychache__
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template

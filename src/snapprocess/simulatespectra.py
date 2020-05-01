@@ -1,19 +1,10 @@
 import random as rand
-import numpy as np
 from heapq import merge
+import numpy as np
 
-from IPython.core.display import DisplayHandle
 from sklearn import preprocessing
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-from IPython.display import display
 
-import src.snapconfig.config as config
+from src.snapconfig import config
 
 
 def get_rand_mod(seq, num_mods=1):
@@ -51,11 +42,11 @@ def get_spectrum(seq):
     """
 
     spec_size = config.get_config(section='input', key='spec_size')
-    charge = config.get_config(section='input', key='charge')
+    # charge = config.get_config(section='input', key='charge')
 
     if len(seq) == 0:
         print('Error: seq length is zero.')
-        return
+        return []
 
     b_spectrum = []
     y_spectrum = []
@@ -94,7 +85,7 @@ def fasta_to_spectra(lines, start, count, dh):
         masses.append(float(splits[1]))
 
         # print(splits[1])
-        '''Progress Monitor'''
+        """Progress Monitor"""
         new = int(((i + start) / len(lines)) * 100)
         if new > prev:
             dh.update(str(new) + '%')
