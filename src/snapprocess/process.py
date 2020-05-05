@@ -1,7 +1,5 @@
 import numpy as np
 import torch
-from IPython.display import display
-
 
 from src.snapconfig import config
 from . import simulatespectra as sim
@@ -41,8 +39,6 @@ def process_fasta_in_batch(model, file_path, spectra_batch_size):
     masses = []
     spectra_out = []
     peps = []
-
-    dh = display(('0%',), display_id=True)
 
     start = 0
     i = 0

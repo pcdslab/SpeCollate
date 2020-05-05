@@ -19,6 +19,7 @@ class Net(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, self.hidden_lstm_dim, self.lstm_layers,
                             dropout=0.5, batch_first=True, bidirectional=True)
+        # self.lstm = nn.DataParallel(self.lstm)
         
         self.linear1_1 = nn.Linear(self.spec_size, 1024)
         self.linear1_2 = nn.Linear(1024, 512)

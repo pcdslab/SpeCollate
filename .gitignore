@@ -164,3 +164,5 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+src/snapconfig/__pycache__/__init__.cpython-37.pyc
+src/snapconfig/__pycache__/config.cpython-37.pyc

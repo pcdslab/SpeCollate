@@ -15,14 +15,17 @@ def train(model, device, train_loader, triplet_loss, optimizer):
 
     accurate_labels = 0
     all_labels = 0
+    l = 0
     for data in train_loader:
+        #print("l: {}/{}".format(l, len(train_loader)))
+        #l += 1
         h = tuple([e.data for e in h])
         data[0], data[1] = data[0].to(device), data[1].to(device)
         
         optimizer.zero_grad()
         
         Q, P, h = model(data, h)
-        nn.utils.clip_grad_norm_(model.parameters(), max_norm=5)
+
         """Mine the hardest triplets. Get rid of N.""" 
         QxQ = process.pairwise_distances(Q)    # calculate distance matrix for spectra
         PxP = process.pairwise_distances(P)    # calculate distance matrix for peptides
@@ -71,7 +74,7 @@ def train(model, device, train_loader, triplet_loss, optimizer):
         loss = loss / 4
                 
         loss.backward()
-            
+        nn.utils.clip_grad_norm_(model.parameters(), 5)
         optimizer.step()
         
         seq = torch.arange(0, len(Q), step=1, device=device, requires_grad=False)
