@@ -11,7 +11,7 @@ rand.seed(37)
 def train(model, device, train_loader, triplet_loss, optimizer):
     model.train()
     batch_size = config.get_config(section='ml', key='batch_size')
-    h = model.init_hidden(batch_size)
+    h = model.module.init_hidden(batch_size)
 
     accurate_labels = 0
     all_labels = 0
@@ -97,7 +97,7 @@ def test(model, device, test_loader, triplet_loss):
         loss = 0
 
         batch_size = config.get_config(section='ml', key='batch_size')
-        h = model.init_hidden(batch_size)
+        h = model.module.init_hidden(batch_size)
         
         for data in test_loader:
             h = tuple([e.data for e in h])

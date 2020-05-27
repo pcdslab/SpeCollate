@@ -5,10 +5,8 @@ from src.snapconfig import config
 
 
 class Net(nn.Module):
-    def __init__(self, device, vocab_size, output_size=512, embedding_dim=512, hidden_lstm_dim=1024, lstm_layers=2):
+    def __init__(self, vocab_size, output_size=512, embedding_dim=512, hidden_lstm_dim=1024, lstm_layers=2):
         super(Net, self).__init__()
-        
-        self.device = device
 
         self.spec_size = config.get_config(section='input', key='spec_size')
         self.output_size = output_size
@@ -18,7 +16,8 @@ class Net(nn.Module):
         
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, self.hidden_lstm_dim, self.lstm_layers,
-                            dropout=0.5, batch_first=True, bidirectional=True)
+                            # dropout=0.5, 
+                            batch_first=True, bidirectional=True)
         # self.lstm = nn.DataParallel(self.lstm)
         
         self.linear1_1 = nn.Linear(self.spec_size, 1024)
@@ -27,7 +26,7 @@ class Net(nn.Module):
         self.linear2_1 = nn.Linear(2048, 1024)
         self.linear2_2 = nn.Linear(1024, 512)
         
-        self.dropout2 = nn.Dropout(0.2)
+        self.dropout2 = nn.Dropout(0.3)
         #self.dropout3 = nn.Dropout(0.3)
         
     def forward(self, data, hidden):
@@ -71,8 +70,8 @@ class Net(nn.Module):
     
     def init_hidden(self, batch_size):
         weight = next(self.parameters()).data
-        hidden = (weight.new(self.lstm_layers * 2, batch_size, self.hidden_lstm_dim).zero_().to(self.device),
-                      weight.new(self.lstm_layers * 2, batch_size, self.hidden_lstm_dim).zero_().to(self.device))
+        hidden = (weight.new(self.lstm_layers * 2, batch_size, self.hidden_lstm_dim).zero_(),
+                      weight.new(self.lstm_layers * 2, batch_size, self.hidden_lstm_dim).zero_())
         return hidden
     
     def name(self):

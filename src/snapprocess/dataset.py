@@ -1,7 +1,9 @@
 import re
 import random as rand
 from os import listdir
+from os import path
 from os.path import join
+from shutil import copyfile
 
 import numpy as np
 import torch
@@ -60,9 +62,22 @@ class LabeledSpectra(data.Dataset):
             file_name = self.test_files[index]
         else:
             file_name = self.train_files[index]
-            
-        spec_file_name = join(self.spec_path, file_name)
-        pep_file_name  = join(self.pep_path, file_name.replace('.pt', '.pep'))
+
+        spec_file_name = join("/scratch/train_lstm/spectra",  file_name)
+        pep_file_name  = join("/scratch/train_lstm/peptides", file_name.replace('.pt', '.pep'))
+
+        # if not path.isfile(spec_file_name):
+        #     src = join(self.spec_path, file_name)
+        #     dst = spec_file_name
+        #     copyfile(src, dst)
+        
+        # if not path.isfile(pep_file_name):
+        #     src = join(self.pep_path, file_name.replace('.pt', '.pep'))
+        #     dst = pep_file_name
+        #     copyfile(src, dst)
+
+        # spec_file_name = join(self.spec_path, spec_file_name)
+        # pep_file_name  = join(self.pep_path, pep_file_name)
         
         # Load data and get label
         spec_torch = torch.load(spec_file_name)

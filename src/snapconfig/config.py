@@ -11,7 +11,7 @@ AAMass = {'A': 71.037114, 'C': 103.009185, 'D': 115.026943, 'E': 129.042593, 'F'
 H2O = 18.015
 NH3 = 17.031
 PROTON = 1.00727647
-DEFAULT_PARAM_PATH = os.path.join(os.getcwd(), 'config.ini')
+DEFAULT_PARAM_PATH = '/DeepSNAP/config.ini'
 PARAM_PATH = None
 
 config = None
@@ -24,7 +24,7 @@ def get_config(section='input', key=None):
 
     # If file path is given use it otherwise use default.
     file_path = PARAM_PATH if PARAM_PATH else DEFAULT_PARAM_PATH
-
+    
     # Read config and convert each value to appropriate type.
     # Only for the first time.
     if not config:
