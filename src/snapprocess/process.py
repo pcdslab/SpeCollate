@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from src.snapconfig import config
-from . import simulatespectra as sim
+from src.snaputils import simulatespectra as sim
 
 
 def pairwise_distances(x, y=None):

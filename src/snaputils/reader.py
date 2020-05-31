@@ -1,22 +1,13 @@
-import pandas as pd
-from pandas import ExcelWriter
-from pandas import ExcelFile
-import numpy as np
 import re
-import random as rand
-import queue
-import csv
-from collections import OrderedDict
-from IPython.display import clear_output
-import csv
-from heapq import merge
-from sklearn import preprocessing
-import gc
 from os import listdir
 from os.path import isfile, join
 
+import numpy as np
+from IPython.display import clear_output
+from sklearn import preprocessing
+
 from src.snapconfig import config
-from src.snapprocess import simulatespectra as sim
+from src.snaputils import simulatespectra as sim
 
 
 def read_msps(msp_folder, decoy=False):

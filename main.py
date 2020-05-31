@@ -55,7 +55,7 @@ def run_par(rank, world_size):
         dataset=test_dataset, batch_size=batch_size, shuffle=False, 
         drop_last=True, num_workers=16)
 
-    lr = 0.001
+    lr = 0.0001
     num_epochs = 100
     weight_decay = 0.0001
     margin = 0.2
@@ -137,8 +137,8 @@ if __name__ == '__main__':
     os.makedirs("/scratch/train_lstm/spectra/", 0o755, exist_ok=True)
     os.makedirs("/scratch/train_lstm/peptides/", 0o755, exist_ok=True)
 
-    # num_gpus = torch.cuda.device_count()
-    num_gpus = 2
+    num_gpus = torch.cuda.device_count()
+    # num_gpus = 2
     print(num_gpus)
     mp.spawn(run_par, args=(num_gpus,), nprocs=num_gpus, join=True)
 
