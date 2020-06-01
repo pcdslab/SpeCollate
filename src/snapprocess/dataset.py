@@ -62,8 +62,8 @@ class LabeledSpectra(data.Dataset):
         else:
             file_name = self.train_files[index]
 
-        spec_file_name = join("/scratch/train_lstm/spectra",  file_name)
-        pep_file_name  = join("/scratch/train_lstm/peptides", file_name.replace('.pt', '.pep'))
+        spec_file_name = join(self.spec_path,  file_name)
+        pep_file_name  = join(self.pep_path, file_name.replace('.pt', '.pep'))
         
         # Load data and get label
         spec_torch = torch.load(spec_file_name)

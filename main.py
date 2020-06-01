@@ -1,16 +1,16 @@
-import os
-from os.path import join
-import shutil
 import argparse
+import os
+import shutil
+from os.path import join
 
 import torch
+import torch.distributed as dist
+import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.optim as optim
-import torch.multiprocessing as mp
-import torch.distributed as dist
 
 from src.snapconfig import config
-from src.snapprocess import model, dataset, trainmodel
+from src.snapprocess import dataset, model, trainmodel
 
 # with redirect_output("deepSNAP_redirect.txtS"):
 train_loss = []
@@ -27,9 +27,11 @@ def run_par(rank, world_size):
     use_mods = config.get_config(section='input', key='use_mods')
     filt = {'charge': charge, 'modified': use_mods}
 
-    msp_dir = "/DeepSNAP/data/msp-labeled/"
-    in_tensor_dir = "/scratch/train_lstm/"
-
+    msp_dir = config.get_config(section='preprocess', key='msp_dir')
+    in_tensor_dir = config.get_config(section='preprocess', key='in_tensor_dir')
+    # msp_dir = "/DeepSNAP/data/msp-labeled/"
+    # in_tensor_dir = "/scratch/train_lstm/"
+    print(in_tensor_dir)
     train_dataset = dataset.LabeledSpectra(in_tensor_dir, filt, test=False)
     test_dataset = dataset.LabeledSpectra(in_tensor_dir, filt, test=True)
 
@@ -48,11 +50,11 @@ def run_par(rank, world_size):
     # )
 
     train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset, batch_size=batch_size, shuffle=False, 
+        dataset=train_dataset, batch_size=batch_size, shuffle=False,
         drop_last=True, num_workers=16, sampler=train_sampler)
 
     test_loader = torch.utils.data.DataLoader(
-        dataset=test_dataset, batch_size=batch_size, shuffle=False, 
+        dataset=test_dataset, batch_size=batch_size, shuffle=False,
         drop_last=True, num_workers=16)
 
     lr = 0.0001
@@ -102,12 +104,14 @@ def cleanup():
 if __name__ == '__main__':
 
     # Initialize parser 
-    parser = argparse.ArgumentParser() 
+    parser = argparse.ArgumentParser()
     
     # Adding optional argument 
-    parser.add_argument("-j", "--job_id", help="No arguments should be passed. \
+    parser.add_argument("-j", "--job-id", help="No arguments should be passed. \
         Instead use the shell script provided with the code.") 
-    parser.add_argument("-p", "--path", help="Path to the scratch folder.") 
+    parser.add_argument("-p", "--path", help="Path to the config file.")
+    parser.add_argument("-s", "--server-name", help="Which server the code is running on. \
+        Options: raptor, comet. Default: comet", default="comet")
     
     # Read arguments from command line 
     args = parser.parse_args() 
@@ -121,6 +125,7 @@ if __name__ == '__main__':
         scratch = args.path
 
     mp.set_start_method('forkserver')
+    config.PARAM_PATH = join((os.path.dirname(__file__)), "config.ini")
 
 
     
@@ -129,17 +134,10 @@ if __name__ == '__main__':
     
     # torch.manual_seed(0)
     # torch.cuda.manual_seed(0)
-    
-    # device = torch.device('cuda')
-    print('new code')
-    #print(device)
-
-    os.makedirs("/scratch/train_lstm/spectra/", 0o755, exist_ok=True)
-    os.makedirs("/scratch/train_lstm/peptides/", 0o755, exist_ok=True)
 
     num_gpus = torch.cuda.device_count()
     # num_gpus = 2
-    print(num_gpus)
+    print("Num GPUs: {}".format(num_gpus))
     mp.spawn(run_par, args=(num_gpus,), nprocs=num_gpus, join=True)
 
     # model.linear1_1.weight.requires_grad = False

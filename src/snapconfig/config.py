@@ -11,7 +11,7 @@ AAMass = {'A': 71.037114, 'C': 103.009185, 'D': 115.026943, 'E': 129.042593, 'F'
 H2O = 18.015
 NH3 = 17.031
 PROTON = 1.00727647
-DEFAULT_PARAM_PATH = '/DeepSNAP/config.ini'
+DEFAULT_PARAM_PATH = './config.ini'
 PARAM_PATH = None
 
 config = None
