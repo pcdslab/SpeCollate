@@ -51,15 +51,15 @@ def run_par(rank, world_size):
 
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset, batch_size=batch_size, shuffle=False,
-        drop_last=True, num_workers=16, sampler=train_sampler)
+        drop_last=True, num_workers=24, sampler=train_sampler)
 
     test_loader = torch.utils.data.DataLoader(
         dataset=test_dataset, batch_size=batch_size, shuffle=False,
-        drop_last=True, num_workers=16)
+        drop_last=True, num_workers=24)
 
-    lr = 0.0001
-    num_epochs = 100
-    weight_decay = 0.0001
+    lr = 0.001
+    num_epochs = 500
+    weight_decay = 0.00001
     margin = 0.2
 
     triplet_loss = nn.TripletMarginLoss(margin=margin, p=2, reduction='sum')
@@ -69,7 +69,8 @@ def run_par(rank, world_size):
     zero_tensor = torch.tensor(0.).to(rank)
 
     model_ = model.Net(vocab_size, output_size=512, embedding_dim=256,
-                        hidden_lstm_dim=1024, lstm_layers=1).to(rank)
+                        hidden_lstm_dim=512, # 1024 
+                        lstm_layers=1).to(rank)
     model_ = nn.parallel.DistributedDataParallel(model_, device_ids=[rank])
     optimizer = optim.Adam(model_.parameters(), lr=lr, weight_decay=weight_decay)
     #optimizer = optim.SGD(model_.parameters(), lr=lr)

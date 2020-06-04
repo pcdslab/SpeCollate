@@ -20,12 +20,14 @@ class Net(nn.Module):
                             batch_first=True, bidirectional=True)
         # self.lstm = nn.DataParallel(self.lstm)
         
-        self.linear1_1 = nn.Linear(self.spec_size, 1024)
-        self.linear1_2 = nn.Linear(1024, 512)
-        
-        self.linear2_1 = nn.Linear(2048, 1024)
-        self.linear2_2 = nn.Linear(1024, 512)
-        
+        self.linear1_1 = nn.Linear(self.spec_size, 512) # self.spec_size, 1024
+        self.linear1_2 = nn.Linear(512, 256)            # 1024, 512
+        #self.linear1_3 = nn.Linear(256, 128)
+
+        self.linear2_1 = nn.Linear(self.hidden_lstm_dim * 2, 512) # 2048, 1024
+        self.linear2_2 = nn.Linear(512, 256) # 1024, 512
+        #self.linear2_3 = nn.Linear(256, 128)
+
         self.dropout2 = nn.Dropout(0.3)
         #self.dropout3 = nn.Dropout(0.3)
         
@@ -44,25 +46,38 @@ class Net(nn.Module):
         lstm_out = lstm_out[:, -1, :]
         # print(lstm_out.size())
         #lstm_out = torch.mean(lstm_out, dim=1)
-        lstm_out = lstm_out.contiguous().view(-1, self.hidden_lstm_dim * 2)
-        out = self.dropout2(lstm_out)
-        
+        out = lstm_out.contiguous().view(-1, self.hidden_lstm_dim * 2)
+
+        out = self.dropout2(out)
         out = self.linear2_1(out)
         out = F.relu(out)
+
         out = self.dropout2(out)
-        
         out = self.linear2_2(out)
         out = F.relu(out)
+        
+        #out = self.dropout2(out)
+        #out = self.linear2_3(out)
+        #out = F.relu(out)
         
         # out = out.view(batch_size, peps.size()[1], 512)
         # out = out[:,-1,:]
         out_pep = F.normalize(out)
         
+
+
+
         out = self.linear1_1(specs.view(-1, self.spec_size))
         out = F.relu(out)
+
         out = self.dropout2(out)
         out = self.linear1_2(out)
         out = F.relu(out)
+        
+        #out = self.dropout2(out)
+        #out = self.linear1_3(out)
+        #out = F.relu(out)
+        
         out_spec = F.normalize(out)
         
         res = out_spec, out_pep, hidden
