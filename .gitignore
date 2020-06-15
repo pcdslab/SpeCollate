@@ -14,6 +14,8 @@ Untitled.ipynb
 */__pychache__
 /test
 *.out
+*.npy
+*.pt
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
