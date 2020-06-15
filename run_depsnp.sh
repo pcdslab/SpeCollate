@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -A wmu101
 #SBATCH --job-name="train-mods"
-#SBATCH --output="train-mods.%j.%N.out"
+#SBATCH --output="comet-out/train-mods-256.%j.%N.out"
 #SBATCH --partition=gpu
 #SBATCH --mem=120G
 #SBATCH --nodes=1

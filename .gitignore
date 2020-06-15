@@ -16,6 +16,7 @@ Untitled.ipynb
 *.out
 *.npy
 *.pt
+/models/hcd
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template

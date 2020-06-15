@@ -22,13 +22,14 @@ class Net(nn.Module):
         
         self.linear1_1 = nn.Linear(self.spec_size, 512) # self.spec_size, 1024
         self.linear1_2 = nn.Linear(512, 256)            # 1024, 512
-        #self.linear1_3 = nn.Linear(256, 128)
+        #self.linear1_3 = nn.Linear(512, 256)
 
         self.linear2_1 = nn.Linear(self.hidden_lstm_dim * 2, 512) # 2048, 1024
         self.linear2_2 = nn.Linear(512, 256) # 1024, 512
         #self.linear2_3 = nn.Linear(256, 128)
 
-        self.dropout2 = nn.Dropout(0.3)
+        self.dropout1 = nn.Dropout(0.2)
+        self.dropout2 = nn.Dropout(0.2)
         #self.dropout3 = nn.Dropout(0.3)
         
     def forward(self, data, hidden):
@@ -48,11 +49,11 @@ class Net(nn.Module):
         #lstm_out = torch.mean(lstm_out, dim=1)
         out = lstm_out.contiguous().view(-1, self.hidden_lstm_dim * 2)
 
-        out = self.dropout2(out)
+        out = self.dropout1(out)
         out = self.linear2_1(out)
         out = F.relu(out)
 
-        out = self.dropout2(out)
+        out = self.dropout1(out)
         out = self.linear2_2(out)
         out = F.relu(out)
         
@@ -74,9 +75,9 @@ class Net(nn.Module):
         out = self.linear1_2(out)
         out = F.relu(out)
         
-        #out = self.dropout2(out)
-        #out = self.linear1_3(out)
-        #out = F.relu(out)
+        # out = self.dropout2(out)
+        # out = self.linear1_3(out)
+        # out = F.relu(out)
         
         out_spec = F.normalize(out)
         

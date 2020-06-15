@@ -8,6 +8,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.optim as optim
+torch.manual_seed(0)
 
 from src.snapconfig import config
 from src.snapprocess import dataset, model, trainmodel
@@ -50,14 +51,17 @@ def run_par(rank, world_size):
     # )
 
     train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset, batch_size=batch_size, shuffle=False,
-        drop_last=True, num_workers=24, sampler=train_sampler)
+        dataset=train_dataset, batch_size=batch_size,
+        drop_last=True, num_workers=24,
+        #sampler=train_sampler
+        shuffle=True
+        )
 
     test_loader = torch.utils.data.DataLoader(
         dataset=test_dataset, batch_size=batch_size, shuffle=False,
         drop_last=True, num_workers=24)
 
-    lr = 0.001
+    lr = 0.00001
     num_epochs = 500
     weight_decay = 0.00001
     margin = 0.2
@@ -82,10 +86,15 @@ def run_par(rank, world_size):
 
     for epoch in range(num_epochs):
         l_epoch = (epoch * world_size) + rank
-        print("Epoch: {}".format(l_epoch))
+        print("Epoch: {}".format(epoch))
         train_sampler.set_epoch(l_epoch)
         trainmodel.train(model_, rank, train_loader, triplet_loss, optimizer)
         trainmodel.test(model_, rank, test_loader, triplet_loss)
+
+        if epoch % 2 == 0 and rank == 0:
+            torch.save(model_, 'models/hcd/model-{}.pt'.format(epoch))
+        
+        dist.barrier()
     
     cleanup()
 
@@ -136,8 +145,8 @@ if __name__ == '__main__':
     # torch.manual_seed(0)
     # torch.cuda.manual_seed(0)
 
-    num_gpus = torch.cuda.device_count()
-    # num_gpus = 2
+    #num_gpus = torch.cuda.device_count()
+    num_gpus = 1
     print("Num GPUs: {}".format(num_gpus))
     mp.spawn(run_par, args=(num_gpus,), nprocs=num_gpus, join=True)
 
