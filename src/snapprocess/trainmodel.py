@@ -19,6 +19,7 @@ def train(model, device, train_loader, triplet_loss, optimizer):
     for data in train_loader:
         #print("l: {}/{}".format(l, len(train_loader)))
         #l += 1
+        print(len(data))
         h = tuple([e.data for e in h])
         data[0], data[1] = data[0].to(device), data[1].to(device)
         

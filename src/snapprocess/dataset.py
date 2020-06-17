@@ -3,6 +3,7 @@ import re
 from os import listdir
 from os.path import join
 from pathlib import Path
+import glob
 
 import numpy as np
 import torch
@@ -37,79 +38,64 @@ class LabeledSpectra(data.Dataset):
         self.test_size   = config.get_config(section='ml', key='test_size')
         self.test        = test
         
-        self.file_names  = []
-        for file in listdir(self.spec_path):
-            #print(file)
-            if self.apply_filter(file):
-                self.file_names.append(file)
-        
-        print('dataset size: {}'.format(len(self.file_names)))        
-        
-        self.train_files, self.test_files = train_test_split(
-            self.file_names, test_size = self.test_size, random_state = rand.randint(0, 1000), shuffle=True)
-        
+        self.pep_file_names  = []
+        self.spec_file_names_lists = [] # a list of lists containing spectra for each peptide
+        self.load_file_names()
+
+        split_rand_state = rand.randint(0, 1000)
+        self.train_peps, self.test_peps = train_test_split(
+            self.pep_file_names, test_size = self.test_size, random_state = split_rand_state, shuffle=True)
+        self.train_specs, self.test_specs = train_test_split(
+            self.spec_file_names_lists, test_size = self.test_size, random_state = split_rand_state, shuffle=True)
+        print('dataset size: {}'.format(len(self.pep_file_names)))
         if self.test:
-            print('test size: {}'.format(len(self.test_files)))
+            print('test size: {}'.format(len(self.test_peps)))
         else:
-            print('train size: {}'.format(len(self.train_files)))
+            print('train size: {}'.format(len(self.train_peps)))
         
 
     def __len__(self):
         'Denotes the total number of samples'
         if self.test:
-            return len(self.test_files)
+            return len(self.test_peps)
         else:
-            return len(self.train_files)
+            return len(self.train_peps)
 
 
     def __getitem__(self, index):
         'Generates one sample of data'
-        file_name = ''
+        pep_file_name = ''
+        spec_file_list = []
         # Select sample
         if self.test:
-            file_name = self.test_files[index]
+            pep_file_name = self.test_peps[index]
+            spec_file_list = self.test_specs[index]
         else:
-            file_name = self.train_files[index]
+            pep_file_name = self.train_peps[index]
+            spec_file_list = self.train_specs[index]
 
-        ext = '.' + file_name.split('.')[-1]
+        'Load spectra'
+        torch_spec_list = []
+        for spec_file in spec_file_list:
+            np_spec = np.load(join(self.spec_path, spec_file))
+            ind = torch.LongTensor([[0]*np_spec.shape[1], np_spec[0]])
+            val = torch.FloatTensor(spec[1])
+            torch_spec = torch.sparse_coo_tensor(ind, val, torch.Size([1, self.spec_size]))
+            torch_spec = (torch_spec.to_dense().squeeze() - 12.311) / 325.394
+            torch_spec_list.append(torch_spec)
 
-        spec_file_name = join(self.spec_path, file_name)
-        pep_file_name = join(self.pep_path,
-                             file_name.replace(ext, '.pep'))
-        
-        # Load data and get label
-        if ext == '.pt':
-            spec_torch = torch.load(spec_file_name)
-        elif ext == '.npy':
-            spec = np.load(spec_file_name)
-            ind = torch.LongTensor([[0]*spec.shape[1], spec[0]])
-            val = torch.FloatTensor((spec[1]))
-            spec_torch = torch.sparse_coo_tensor(ind, val, torch.Size([1, self.spec_size]))
-        #if "torch.sparse" in spec_torch.type():
-            # dense tensor. subtract mean and divide by std
-            #spec_torch = (spec_torch.to_dense().squeeze() - 13.007) / 339.345
-            spec_torch = (spec_torch.to_dense().squeeze() - 12.311) / 325.394
-
-        # Load peptide and convert to idx array
+        'Load peptide'
+        pep_file_name = join(self.pep_path, pep_file_name)
         f = open(pep_file_name, "r")
         pep = f.readlines()[0].strip()
         f.close()
         
-        pepl = np.zeros(len(pep) + 0)
-        file_parts = re.search(r"(\d+)-(\d+)-(\d+.\d+)-(\d)-(0|1).[pt|npy]", file_name)
-        #pepl[0] = int(file_parts[4]) + len(self.aas)  # coded value of charge
-        #pepl[1] = int(file_parts[2]) + self.charge + 1 + len(self.aas) # coded value of specie id
-        
-        # for i in range(2, len(pep)):
-        #     pepl[i] = self.aa2idx[pep[i]]
-        for i, aa in enumerate(pep):
-            pepl[i+0] = self.aa2idx[aa]
-            # pepl[i + 2] = round(config.AAMass[aa])
-        
+        pepl = [self.aa2idx[aa] for aa in pep]
         pepl = self.pad_left(pepl, self.seq_len)
-        pep_torch = torch.tensor(pepl, dtype=torch.long)
+        torch_pep = torch.tensor(pepl, dtype=torch.long)
         
-        return [spec_torch, pep_torch]
+        return torch_spec_list, torch_pep, len(torch_spec_list)
+        
     
     def apply_filter(self, file_name):
         try:
@@ -126,7 +112,31 @@ class LabeledSpectra(data.Dataset):
         
         return False
     
+
     def pad_left(self, arr, size):
         out = np.zeros(size)
         out[-len(arr):] = arr
         return out
+
+
+    def verfiy_files(self, specs):
+        'Make sure at least one spectrum file satisifies the filter.'
+        for spec in specs:
+            if self.apply_filter(spec):
+                return True
+        return False
+
+    
+    def load_file_names(self):
+        'Load the peptide and corresponding spectra file names that satisfy the filter'
+        for pep_file in listdir(self.pep_path):
+            spec_file_pattern = join(self.spec_path, pep_file.replace('.pep', '*.npy'))
+            spec_file_names = glob.glob(spec_file_pattern)
+            spec_file_list = []
+            for spec in spec_file_names:
+                l_spec = spec.split('/')[-1]
+                if self.apply_filter(l_spec):
+                    spec_file_list.append(l_spec)
+            if spec_file_list:
+                self.pep_file_names.append(pep_file)
+                self.spec_file_names_lists.append(spec_file_list)
