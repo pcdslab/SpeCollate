@@ -2,12 +2,17 @@ import argparse
 import os
 import shutil
 from os.path import join
+import re
+import pickle
+import random as rand
+import numpy as np
 
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.optim as optim
+from sklearn.model_selection import train_test_split
 torch.manual_seed(0)
 
 from src.snapconfig import config
@@ -23,18 +28,29 @@ def run_par(rank, world_size):
     #rank = dist.get_rank()
     setup(rank, world_size)
 
-    batch_size = config.get_config(section="ml", key="batch_size")
-    charge = config.get_config(section='input', key='charge')
-    use_mods = config.get_config(section='input', key='use_mods')
-    filt = {'charge': charge, 'modified': use_mods}
+    batch_size  = config.get_config(section="ml", key="batch_size")
+    charge      = config.get_config(section='input', key='charge')
+    use_mods    = config.get_config(section='input', key='use_mods')
+    filt        = {'charge': charge, 'modified': use_mods}
+    test_size   = config.get_config(section='ml', key='test_size')
 
-    msp_dir = config.get_config(section='preprocess', key='msp_dir')
+    msp_dir     = config.get_config(section='preprocess', key='msp_dir')
     in_tensor_dir = config.get_config(section='preprocess', key='in_tensor_dir')
     # msp_dir = "/DeepSNAP/data/msp-labeled/"
     # in_tensor_dir = "/scratch/train_lstm/"
     print(in_tensor_dir)
-    train_dataset = dataset.LabeledSpectra(in_tensor_dir, filt, test=False)
-    test_dataset = dataset.LabeledSpectra(in_tensor_dir, filt, test=True)
+
+    listing_path = join(in_tensor_dir, 'pep_spec.pkl')
+    pep_file_names, spec_file_names_lists = load_file_names(filt=filt, listing_path=listing_path)
+    
+    split_rand_state = rand.randint(0, 1000)
+    train_peps, test_peps = train_test_split(
+        pep_file_names, test_size=test_size, random_state=split_rand_state, shuffle=True)
+    train_specs, test_specs = train_test_split(
+        spec_file_names_lists, test_size=test_size, random_state=split_rand_state, shuffle=True)
+
+    train_dataset = dataset.LabeledSpectra(in_tensor_dir, train_peps, train_specs)
+    test_dataset  = dataset.LabeledSpectra(in_tensor_dir, test_peps,  test_specs)
 
     vocab_size = train_dataset.vocab_size
 
@@ -52,14 +68,14 @@ def run_par(rank, world_size):
 
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset, batch_size=batch_size,
-        drop_last=True, num_workers=24,
-        #sampler=train_sampler
-        shuffle=True
+        drop_last=True, num_workers=8, collate_fn=psm_collate,
+        sampler=train_sampler
+        #shuffle=True
         )
 
     test_loader = torch.utils.data.DataLoader(
         dataset=test_dataset, batch_size=batch_size, shuffle=False,
-        drop_last=True, num_workers=24)
+        collate_fn=psm_collate, drop_last=True, num_workers=8)
 
     lr = 0.00001
     num_epochs = 500
@@ -100,12 +116,54 @@ def run_par(rank, world_size):
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
+    os.environ['MASTER_PORT'] = '12345'
     dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
     # dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
 
 def cleanup():
     dist.destroy_process_group()
+
+
+def apply_filter(filt, file_name):
+    try:
+        file_parts = re.search(r"(\d+)-(\d+)-(\d+.\d+)-(\d+)-(0|1).[pt|npy]", file_name)
+        charge = int(file_parts[4])
+        modified = bool(int(file_parts[5]))
+    except:
+        print(file_name)
+        print(file_parts)
+    
+    if ((filt["charge"] == 0 or charge <= filt["charge"])
+        and (filt["modified"] or filt["modified"] == modified)):
+        return True
+    
+    return False
+
+
+def load_file_names(filt, listing_path):
+    'Load the peptide and corresponding spectra file names that satisfy the filter'
+    with open(listing_path, 'rb') as f:
+        dir_listing = pickle.load(f)
+
+    pep_file_names = []
+    spec_file_names_lists = []
+    for pep, spec_list in dir_listing:
+        spec_file_list = []
+        for spec in spec_list:
+            if apply_filter(filt, spec):
+                spec_file_list.append(spec)
+        if spec_file_list:
+            pep_file_names.append(pep)
+            spec_file_names_lists.append(spec_file_list)
+    
+    return pep_file_names, spec_file_names_lists
+
+
+def psm_collate(batch):
+    specs = torch.cat([item[0] for item in batch], 0)
+    peps = torch.stack([item[1] for item in batch], 0)
+    counts = np.array([item[2] for item in batch])
+    return [specs, peps, counts]
 
 # drop_prob=0.5
 # print(vocab_size)
@@ -145,8 +203,7 @@ if __name__ == '__main__':
     # torch.manual_seed(0)
     # torch.cuda.manual_seed(0)
 
-    #num_gpus = torch.cuda.device_count()
-    num_gpus = 1
+    num_gpus = torch.cuda.device_count()
     print("Num GPUs: {}".format(num_gpus))
     mp.spawn(run_par, args=(num_gpus,), nprocs=num_gpus, join=True)
 
