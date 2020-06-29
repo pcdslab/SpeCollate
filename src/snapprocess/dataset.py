@@ -1,14 +1,8 @@
-import random as rand
-import re
-from os import listdir
 from os.path import join
 from pathlib import Path
-import glob
-import pickle
 
 import numpy as np
 import torch
-from sklearn.model_selection import train_test_split
 from torch.utils import data
 
 from src.snapconfig import config
@@ -62,7 +56,7 @@ class LabeledSpectra(data.Dataset):
             ind = torch.LongTensor([[0]*np_spec.shape[1], np_spec[0]])
             val = torch.FloatTensor(np_spec[1])
             torch_spec = torch.sparse_coo_tensor(ind, val, torch.Size([1, self.spec_size]))
-            torch_spec = (torch_spec.to_dense() - 11.505) / 323.398
+            # torch_spec = (torch_spec.to_dense() - 11.505) / 323.398
             torch_spec_list.append(torch_spec)
 
         torch_spec = torch.cat(torch_spec_list, dim=0)

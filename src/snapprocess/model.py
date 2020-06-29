@@ -28,8 +28,10 @@ class Net(nn.Module):
         self.linear2_2 = nn.Linear(512, 256) # 1024, 512
         #self.linear2_3 = nn.Linear(256, 128)
 
-        self.dropout1 = nn.Dropout(0.3)
-        self.dropout2 = nn.Dropout(0.3)
+        do = 0.3
+        self.dropout1 = nn.Dropout(do)
+        self.dropout2 = nn.Dropout(do)
+        print("dropout: {}".format(do))
         #self.dropout3 = nn.Dropout(0.3)
         
     def forward(self, data, hidden):

@@ -1,4 +1,6 @@
 import random as rand
+import atexit
+#from matplotlib import pyplot as plt
 
 import numpy as np
 import torch
@@ -8,6 +10,31 @@ from src.snapconfig import config
 from src.snapprocess import process
 
 rand.seed(37)
+
+train_accuracy = []
+train_loss = []
+test_accuracy = []
+test_loss = []
+
+
+# def exit_handler():
+#     plt.figure()
+#     plt.plot(train_accuracy)
+#     plt.plot(test_accuracy)
+#     plt.xlabel("epoch")
+#     plt.ylabel("accuracy")
+#     plt.savefig("accuracy.png", dpi=600)
+
+#     plt.figure()
+#     plt.plot(train_loss)
+#     plt.plot(test_loss)
+#     plt.xlabel("epoch")
+#     plt.ylabel("loss")
+#     plt.savefig("loss.png", dpi=600)
+
+
+# atexit.register(exit_handler)
+
 
 def train(model, device, train_loader, triplet_loss, optimizer):
     model.train()
@@ -53,8 +80,8 @@ def train(model, device, train_loader, triplet_loss, optimizer):
         all_labels = all_labels + len(Q)  
     
     accuracy = 100. * float(accurate_labels) / all_labels
-    # train_accuracy.append(accuracy)
-    # train_loss.append(loss)
+    train_accuracy.append(accuracy)
+    train_loss.append(loss)
     print('Train accuracy: {}/{} ({:.3f}%)\tLoss: {:.6f}'.format(accurate_labels, all_labels, accuracy, loss))
     
 
@@ -87,8 +114,8 @@ def test(model, device, test_loader, triplet_loss):
             all_labels = all_labels + len(Q)
                 
         accuracy = 100. * float(accurate_labels) / all_labels
-        # test_accuracy.append(accuracy)
-        # test_loss.append(loss)
+        test_accuracy.append(accuracy)
+        test_loss.append(loss)
         print('Test accuracy: {}/{} ({:.3f}%)\tLoss: {:.6f}'.format(accurate_labels, all_labels, accuracy, loss))
 
 

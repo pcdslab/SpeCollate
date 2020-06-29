@@ -69,17 +69,20 @@ def run_par(rank, world_size):
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset, batch_size=batch_size,
         drop_last=True, num_workers=8, collate_fn=psm_collate,
-        sampler=train_sampler
-        #shuffle=True
+        #sampler=train_sampler
+        shuffle=True
         )
 
     test_loader = torch.utils.data.DataLoader(
-        dataset=test_dataset, batch_size=batch_size, shuffle=False,
-        collate_fn=psm_collate, drop_last=True, num_workers=8)
+        dataset=test_dataset, batch_size=batch_size,
+        collate_fn=psm_collate, drop_last=True, num_workers=8,
+        shuffle=True)
 
-    lr = 0.00001
+    lr = 0.00005
+    print("Learning Rate: {}".format(lr))
     num_epochs = 500
-    weight_decay = 0.00001
+    weight_decay = 0.0001
+    print("Weigh Decay: {}".format(weight_decay))
     margin = 0.2
 
     triplet_loss = nn.TripletMarginLoss(margin=margin, p=2, reduction='sum')
@@ -116,7 +119,7 @@ def run_par(rank, world_size):
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12345'
+    os.environ['MASTER_PORT'] = '12349'
     dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
     # dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
 
