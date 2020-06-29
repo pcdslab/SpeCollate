@@ -16,6 +16,7 @@ Untitled.ipynb
 *.out
 *.npy
 *.pt
+*.png
 /models/hcd
 
 # Created by .ignore support plugin (hsz.mobi)
