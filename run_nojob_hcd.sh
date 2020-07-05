@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SLURM_JOB_ID=34341194
+SLURM_JOB_ID=34384106
 #CUDA_VISIBLE_DEVICES=1
 
 time (echo "Copying data."

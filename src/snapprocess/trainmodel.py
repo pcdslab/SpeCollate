@@ -82,7 +82,7 @@ def train(model, device, train_loader, triplet_loss, optimizer):
     accuracy = 100. * float(accurate_labels) / all_labels
     train_accuracy.append(accuracy)
     train_loss.append(loss)
-    print('Train accuracy: {}/{} ({:.3f}%)\tLoss: {:.6f}'.format(accurate_labels, all_labels, accuracy, loss))
+    print('Train accuracy:\t{}/{} ({:.3f}%)\t\tLoss: {:.6f}'.format(accurate_labels, all_labels, accuracy, loss))
     
 
 def test(model, device, test_loader, triplet_loss):
@@ -116,7 +116,7 @@ def test(model, device, test_loader, triplet_loss):
         accuracy = 100. * float(accurate_labels) / all_labels
         test_accuracy.append(accuracy)
         test_loss.append(loss)
-        print('Test accuracy: {}/{} ({:.3f}%)\tLoss: {:.6f}'.format(accurate_labels, all_labels, accuracy, loss))
+        print('Test accuracy:\t{}/{} ({:.3f}%)\t\tLoss: {:.6f}'.format(accurate_labels, all_labels, accuracy, loss))
 
 
 def get_masks(counts, p_len, q_len):
