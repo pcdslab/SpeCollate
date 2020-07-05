@@ -31,7 +31,8 @@ def run_par(rank, world_size):
     batch_size  = config.get_config(section="ml", key="batch_size")
     charge      = config.get_config(section='input', key='charge')
     use_mods    = config.get_config(section='input', key='use_mods')
-    filt        = {'charge': charge, 'modified': use_mods}
+    num_mods    = config.get_config(section='input', key='num_mods')
+    filt        = {'charge': charge, 'mods': num_mods if use_mods else 0}
     test_size   = config.get_config(section='ml', key='test_size')
 
     msp_dir     = config.get_config(section='preprocess', key='msp_dir')
@@ -42,6 +43,8 @@ def run_par(rank, world_size):
 
     listing_path = join(in_tensor_dir, 'pep_spec.pkl')
     pep_file_names, spec_file_names_lists = load_file_names(filt=filt, listing_path=listing_path)
+    means = np.load(join(in_tensor_dir, "means.npy"))
+    stds = np.load(join(in_tensor_dir, "stds.npy"))
     
     split_rand_state = rand.randint(0, 1000)
     train_peps, test_peps = train_test_split(
@@ -49,8 +52,8 @@ def run_par(rank, world_size):
     train_specs, test_specs = train_test_split(
         spec_file_names_lists, test_size=test_size, random_state=split_rand_state, shuffle=True)
 
-    train_dataset = dataset.LabeledSpectra(in_tensor_dir, train_peps, train_specs)
-    test_dataset  = dataset.LabeledSpectra(in_tensor_dir, test_peps,  test_specs)
+    train_dataset = dataset.LabeledSpectra(in_tensor_dir, train_peps, train_specs, means, stds)
+    test_dataset  = dataset.LabeledSpectra(in_tensor_dir, test_peps,  test_specs, means, stds)
 
     vocab_size = train_dataset.vocab_size
 
@@ -78,10 +81,10 @@ def run_par(rank, world_size):
         collate_fn=psm_collate, drop_last=True, num_workers=8,
         shuffle=True)
 
-    lr = 0.00005
+    lr = 0.00001
     print("Learning Rate: {}".format(lr))
     num_epochs = 500
-    weight_decay = 0.0001
+    weight_decay = 0.000001
     print("Weigh Decay: {}".format(weight_decay))
     margin = 0.2
 
@@ -119,7 +122,7 @@ def run_par(rank, world_size):
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12349'
+    os.environ['MASTER_PORT'] = '12345'
     dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
     # dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
 
@@ -129,15 +132,15 @@ def cleanup():
 
 def apply_filter(filt, file_name):
     try:
-        file_parts = re.search(r"(\d+)-(\d+)-(\d+.\d+)-(\d+)-(0|1).[pt|npy]", file_name)
+        file_parts = re.search(r"(\d+)-(\d+)-(\d+.\d+)-(\d+)-(\d+).[pt|npy]", file_name)
         charge = int(file_parts[4])
-        modified = bool(int(file_parts[5]))
+        mods = int(file_parts[5])
     except:
         print(file_name)
         print(file_parts)
     
     if ((filt["charge"] == 0 or charge <= filt["charge"])
-        and (filt["modified"] or filt["modified"] == modified)):
+        and (mods <= filt["mods"])):
         return True
     
     return False
