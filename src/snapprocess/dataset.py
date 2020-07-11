@@ -18,7 +18,7 @@ class LabeledSpectra(data.Dataset):
         assert in_path.exists()
         assert in_path.is_dir()
 
-        self.aas            = ['_PAD'] + list(config.AAMass.keys()) + list(config.ModCHAR.values())
+        self.aas            = ['_PAD'] + list(config.AAMass.keys())# + list(config.ModCHAR.values())
         self.aa2idx         = {a:i for i, a in enumerate(self.aas)}
         self.idx2aa         = {i:a for i, a in enumerate(self.aas)}
         

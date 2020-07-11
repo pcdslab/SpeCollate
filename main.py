@@ -82,7 +82,7 @@ def run_par(rank, world_size):
         shuffle=True)
 
     print("Learning without DeepNovo dataset.")
-    lr = 0.0001
+    lr = 0.00005
     print("Learning Rate: {}".format(lr))
     num_epochs = 500
     weight_decay = 0.0001
