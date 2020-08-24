@@ -18,6 +18,9 @@ Untitled.ipynb
 *.pt
 *.png
 /models/hcd
+*.tar.gz
+out
+/models
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
