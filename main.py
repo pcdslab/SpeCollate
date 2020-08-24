@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 torch.manual_seed(0)
 
 from src.snapconfig import config
-from src.snapprocess import dataset, model, trainmodel
+from src.snaptrain import dataset, model, trainmodel
 
 # with redirect_output("deepSNAP_redirect.txtS"):
 train_loss = []
@@ -47,13 +47,14 @@ def run_par(rank, world_size):
     stds = np.load(join(in_tensor_dir, "stds.npy"))
     
     split_rand_state = rand.randint(0, 1000)
-    train_peps, test_peps = train_test_split(
-        pep_file_names, test_size=test_size, random_state=split_rand_state, shuffle=True)
-    train_specs, test_specs = train_test_split(
-        spec_file_names_lists, test_size=test_size, random_state=split_rand_state, shuffle=True)
+    trains, tests = train_test_split(
+        list(zip(pep_file_names, spec_file_names_lists)), test_size=test_size, 
+        random_state=split_rand_state, shuffle=True)
 
+    train_peps, train_specs = map(list, zip(*trains))
+    test_peps, test_specs = map(list, zip(*tests))
     train_dataset = dataset.LabeledSpectra(in_tensor_dir, train_peps, train_specs, means, stds)
-    test_dataset  = dataset.LabeledSpectra(in_tensor_dir, test_peps,  test_specs, means, stds)
+    test_dataset  = dataset.LabeledSpectra(in_tensor_dir, test_peps, test_specs, means, stds)
 
     vocab_size = train_dataset.vocab_size
 
@@ -82,7 +83,7 @@ def run_par(rank, world_size):
         shuffle=True)
 
     print("Learning without DeepNovo dataset.")
-    lr = 0.00005
+    lr = 0.0005
     print("Learning Rate: {}".format(lr))
     num_epochs = 500
     weight_decay = 0.0001
@@ -123,7 +124,7 @@ def run_par(rank, world_size):
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12349'
+    os.environ['MASTER_PORT'] = '12345'
     dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
     # dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
 
@@ -162,15 +163,21 @@ def load_file_names(filt, listing_path):
         if spec_file_list:
             pep_file_names.append(pep)
             spec_file_names_lists.append(spec_file_list)
-    
+
+    assert len(pep_file_names) == len(spec_file_names_lists)
     return pep_file_names, spec_file_names_lists
 
 
 def psm_collate(batch):
     specs = torch.cat([item[0] for item in batch], 0)
     peps = torch.stack([item[1] for item in batch], 0)
-    counts = np.array([item[2] for item in batch])
-    return [specs, peps, counts]
+    dpeps = torch.stack([item[2] for item in batch if len(item[2]) > 0])
+    peps_set = set(map(tuple, peps.tolist()))
+    dpeps_set = set(map(tuple, dpeps.tolist()))
+    dpeps_list = list(dpeps_set - dpeps_set.intersection(peps_set))
+    dpeps = torch.tensor(dpeps_list, dtype=torch.long)
+    counts = np.array([item[3] for item in batch])
+    return [specs, peps, dpeps, counts]
 
 # drop_prob=0.5
 # print(vocab_size)

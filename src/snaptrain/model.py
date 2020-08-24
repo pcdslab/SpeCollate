@@ -34,57 +34,43 @@ class Net(nn.Module):
         print("dropout: {}".format(do))
         #self.dropout3 = nn.Dropout(0.3)
         
-    def forward(self, data, hidden):
-        specs = data[0]
-        peps = data[1]
-        # print(peps.type())
-        # print('Input to the model size: {}'.format(specs.size()))
-        # print('Input to the model size: {}'.format(peps.size()))
-        # peps = peps.unsqueeze(-1).float()
-        # print(peps.type())
-        
-        embeds = self.embedding(peps)
-        lstm_out, hidden = self.lstm(embeds, hidden)
-        # print(lstm_out.size())
-        lstm_out = lstm_out[:, -1, :]
-        # print(lstm_out.size())
-        #lstm_out = torch.mean(lstm_out, dim=1)
-        out = lstm_out.contiguous().view(-1, self.hidden_lstm_dim * 2)
 
-        out = self.dropout1(out)
-        out = self.linear2_1(out)
-        out = F.relu(out)
+    def forward(self, data, hidden, data_type=None):
+        assert not data_type or data_type == "specs" or data_type == "peps"
+        res = []
+        if not data_type or data_type == "specs":
+            specs = data[0]
+            out = self.linear1_1(specs.view(-1, self.spec_size))
+            out = F.relu(out)
 
-        out = self.dropout1(out)
-        out = self.linear2_2(out)
-        out = F.relu(out)
-        
-        #out = self.dropout2(out)
-        #out = self.linear2_3(out)
-        #out = F.relu(out)
-        
-        # out = out.view(batch_size, peps.size()[1], 512)
-        # out = out[:,-1,:]
-        out_pep = F.normalize(out)
-        
+            out = self.dropout2(out)
+            out = self.linear1_2(out)
+            out = F.relu(out)
+            
+            out_spec = F.normalize(out)
+            res.append(out_spec)
 
+        if not data_type or data_type == "peps":
+            for peps in data[1:]:
+                embeds = self.embedding(peps)
+                lstm_out, hidden = self.lstm(embeds, hidden)
+                lstm_out = lstm_out[:, -1, :]
+                out = lstm_out.contiguous().view(-1, self.hidden_lstm_dim * 2)
 
+                out = self.dropout1(out)
+                out = self.linear2_1(out)
+                out = F.relu(out)
 
-        out = self.linear1_1(specs.view(-1, self.spec_size))
-        out = F.relu(out)
+                out = self.dropout1(out)
+                out = self.linear2_2(out)
+                out = F.relu(out)
 
-        out = self.dropout2(out)
-        out = self.linear1_2(out)
-        out = F.relu(out)
-        
-        # out = self.dropout2(out)
-        # out = self.linear1_3(out)
-        # out = F.relu(out)
-        
-        out_spec = F.normalize(out)
-        
-        res = out_spec, out_pep, hidden
+                out_pep = F.normalize(out)
+                res.append(out_pep)
+        res.append(hidden)
+
         return res
+
     
     def init_hidden(self, batch_size):
         weight = next(self.parameters()).data

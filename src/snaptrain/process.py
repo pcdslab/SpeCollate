@@ -24,8 +24,9 @@ def pairwise_distances(x, y=None):
     dist = x_norm + y_norm - 2.0 * torch.mm(x, y_t)
     # Ensure diagonal is zero if x=y
     if y is None:
-        dist = dist - torch.diag(dist.diag())
-    dist[dist != dist] = 0  # set all nan values to zero
+        #dist = dist - torch.diag(dist.diag())
+        dist.fill_diagonal_(0.0)
+    dist[torch.isnan(dist)] = 0.0  # set all nan values to zero
     return torch.clamp(dist, 0.0, np.inf)
 
 

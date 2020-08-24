@@ -5,9 +5,10 @@ import atexit
 import numpy as np
 import torch
 import torch.nn as nn
+import progressbar
 
 from src.snapconfig import config
-from src.snapprocess import process
+from src.snaptrain import process
 
 rand.seed(37)
 
@@ -44,40 +45,40 @@ def train(model, device, train_loader, triplet_loss, optimizer):
     accurate_labels = 0
     all_labels = 0
     l = 0
-    for data in train_loader:
-        #print("l: {}/{}".format(l, len(train_loader)))
-        #l += 1
-        #print(len(data))
-        h = tuple([e.data for e in h])
-        # print(type(data[0][0]))
-        # print((data[0][0].shape))
-        # print(type(data[1]))
-        # print(data[1].shape)
-        # print(type(data[2]))
-        # print((data[2].shape))
-        data[0], data[1] = data[0].to(device), data[1].to(device)
-        counts = data[2]
-        q_len = len(data[0])
-        
-        optimizer.zero_grad()
-        
-        Q, P, h = model(data, h)
+    with progressbar.ProgressBar(max_value=len(train_loader)) as bar:
+        for idx, data in enumerate(train_loader):
+            h = tuple([e.data for e in h])
+            q_len = len(data[0])
+            p_len = len(data[1])
+            d_len = len(data[2])
+            if p_len > d_len:
+                seq_len = config.get_config(section='ml', key='pep_seq_len')
+                zero_pad = torch.zeros(p_len - d_len, seq_len, dtype=torch.long)
+                data[2] = torch.cat((data[2], zero_pad))
+            data[0] = data[0].to(device)
+            data[1] = data[1].to(device)
+            data[2] = data[2].to(device)
+            counts = data[3]
+            
+            optimizer.zero_grad()
+            
+            Q, P, D, h = model(data[:-1], h)
 
-        loss, QxP = snap_loss(counts, Q, P, triplet_loss, device)
-                
-        loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 5)
-        
-        optimizer.step()
-        
-        seq, _ = get_index(counts, q_len)
-        seq = torch.LongTensor(seq).to(device)
-        #print("accuracy seq len: {}".format(len(seq)))
-        #print("QxP.argmin(1) len: {}".format(len(QxP.argmin(1))))
-        # QxP contains the distance of each spectrum from each peptide.
-        accurate_labels = accurate_labels + torch.sum(QxP.argmin(1) == seq)
-        
-        all_labels = all_labels + len(Q)  
+            loss, QxPD = snap_loss2(counts, P, Q, D[:d_len], triplet_loss, device)
+
+            loss.backward()
+            
+            nn.utils.clip_grad_norm_(model.parameters(), 5)
+            
+            optimizer.step()
+            
+            seq, _ = get_index(counts, q_len)
+            seq = torch.LongTensor(seq).to(device)
+            # QxP contains the distance of each spectrum from each peptide.
+            accurate_labels = accurate_labels + torch.sum(QxPD.argmin(1) == seq)
+            
+            all_labels = all_labels + len(Q)
+            bar.update(idx)
     
     accuracy = 100. * float(accurate_labels) / all_labels
     train_accuracy.append(accuracy)
@@ -98,18 +99,26 @@ def test(model, device, test_loader, triplet_loss):
         
         for data in test_loader:
             h = tuple([e.data for e in h])
-            data[0], data[1] = data[0].to(device), data[1].to(device)
-            counts = data[2]
             q_len = len(data[0])
+            p_len = len(data[1])
+            d_len = len(data[2])
+            if p_len > d_len:
+                seq_len = config.get_config(section='ml', key='pep_seq_len')
+                zero_pad = torch.zeros(p_len - d_len, seq_len, dtype=torch.long)
+                data[2] = torch.cat((data[2], zero_pad))
+            data[0] = data[0].to(device)
+            data[1] = data[1].to(device)
+            data[2] = data[2].to(device)
+            counts = data[3]
             
-            Q, P, h = model(data, h)
+            Q, P, D, h = model(data[:-1], h)
 
-            loss, QxP = snap_loss(counts, Q, P, triplet_loss, device)
+            loss, QxPD = snap_loss2(counts, P, Q, D[:d_len], triplet_loss, device)
             
             seq, _ = get_index(counts, q_len)
             seq = torch.LongTensor(seq).to(device)
             # QxP contains the distance of each spectrum from each peptide.
-            accurate_labels = accurate_labels + torch.sum(QxP.argmin(1) == seq)
+            accurate_labels = accurate_labels + torch.sum(QxPD.argmin(1) == seq)
             
             all_labels = all_labels + len(Q)
                 
@@ -185,3 +194,38 @@ def snap_loss(counts, Q, P, triplet_loss, device):
     loss = loss / 4
 
     return loss, QxP
+
+
+def snap_loss2(counts, P, Q, D, triplet_loss, device):
+    """Mine the hardest sextuplets."""
+    PxP = process.pairwise_distances(P)     # calculate distance matrix for peptides
+    PxQ = process.pairwise_distances(P, Q)  # calculate distance matrix for spectra-peptides
+    PxD = process.pairwise_distances(P, D)
+    
+    # # Get maskes
+    p_len, q_len = len(P), len(Q)
+    PQ_mask, _ = get_masks(counts, p_len, q_len)
+    PQ_mask = PQ_mask.to(device)
+
+    # Mine hardest positives
+    PxQ_masked = PxQ * PQ_mask
+    PxQ_max = Q[PxQ_masked.max(1).indices]
+
+    # # Mine hardest negatives
+    PD = torch.cat((P, D))
+    PxP.fill_diagonal_(float("inf"))
+    PxPD = torch.cat((PxP, PxD), axis=1)
+    PxPD_min = PD[PxPD.min(1).indices]              # nearest peptide for each peptide
+
+    PQ_neg_mask = (1 - PQ_mask).to(device)
+    PxQ_masked = PxQ * PQ_neg_mask
+    PxQ_masked[PQ_neg_mask < 0.1] = float("inf")
+    PxQ_min = Q[PxQ_masked.min(1).indices]          # nearest spectrum for each peptide
+
+    # # Calculate the loss
+    loss =  triplet_loss(P, PxQ_max, PxPD_min)      # peptide-peptide negatives
+    loss += triplet_loss(P, PxQ_max, PxQ_min)       # peptide-spectrum negatives
+    
+    loss = loss / 2
+
+    return loss, process.pairwise_distances(Q, PD)

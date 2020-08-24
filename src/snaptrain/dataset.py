@@ -1,5 +1,6 @@
 from os.path import join
 from pathlib import Path
+import re
 
 import numpy as np
 import torch
@@ -17,7 +18,6 @@ class LabeledSpectra(data.Dataset):
         in_path = Path(dir_path)
         assert in_path.exists()
         assert in_path.is_dir()
-
         self.aas            = ['_PAD'] + list(config.AAMass.keys())# + list(config.ModCHAR.values())
         self.aa2idx         = {a:i for i, a in enumerate(self.aas)}
         self.idx2aa         = {i:a for i, a in enumerate(self.aas)}
@@ -59,12 +59,9 @@ class LabeledSpectra(data.Dataset):
             np_spec = np.load(join(self.spec_path, spec_file))
             ind = torch.LongTensor([[0]*np_spec.shape[1], np_spec[0]])
             val = torch.FloatTensor(np_spec[1])
-            torch_spec = torch.sparse_coo_tensor(ind, val, torch.Size([1, self.spec_size])).to_dense()
-            # mean = torch_spec.mean()
-            # std = torch_spec.std()
-
+            torch_spec = torch.sparse_coo_tensor(
+                ind, val, torch.Size([1, self.spec_size])).to_dense()
             torch_spec = (torch_spec - self.means) / self.stds
-            #torch_spec = (torch_spec.to_dense() - 7.707) / 0.038
             torch_spec_list.append(torch_spec)
 
         torch_spec = torch.cat(torch_spec_list, dim=0)
@@ -78,11 +75,27 @@ class LabeledSpectra(data.Dataset):
         pepl = [self.aa2idx[aa] for aa in pep]
         pepl = self.pad_left(pepl, self.seq_len)
         torch_pep = torch.tensor(pepl, dtype=torch.long)
+
+        dpep = self.get_decoy(pep)
+        if dpep:
+            dpepl = [self.aa2idx[aa] for aa in dpep]
+            dpepl = self.pad_left(dpepl, self.seq_len)
+            torch_pep_decoy = torch.tensor(dpepl, dtype=torch.long)
+        else:
+            torch_pep_decoy = torch.empty(0, 0, dtype=torch.long)
         
-        return torch_spec, torch_pep, len(torch_spec_list)
+        return torch_spec, torch_pep, torch_pep_decoy, len(torch_spec_list)
         
 
     def pad_left(self, arr, size):
         out = np.zeros(size)
         out[-len(arr):] = arr
         return out
+
+    def get_decoy(self, pep):
+        pep_parts = re.findall(r"([A-Z][a-z]?)", pep)
+        decoy_pep = pep_parts[0] + "".join(pep_parts[-2:0:-1]) + pep_parts[-1]
+        if decoy_pep != pep:
+            return decoy_pep
+        else:
+            return []

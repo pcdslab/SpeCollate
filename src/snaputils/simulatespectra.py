@@ -34,6 +34,15 @@ def get_aa_mass(aa):
     return config.AAMass[aa] + 57.021464 if aa == 'C' else config.AAMass[aa]
 
 
+def get_pep_mass(pep):
+    """
+    Get peptide mass from the given pep string.
+    :param pep: str
+    :return: float
+    """
+    return sum(config.AAMass[aa] for aa in pep) + config.H2O
+
+
 def get_spectrum(seq):
     """
     Get theoretical spectrum from a peptide string seq.
