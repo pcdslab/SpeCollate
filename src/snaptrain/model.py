@@ -28,7 +28,7 @@ class Net(nn.Module):
         self.linear2_2 = nn.Linear(512, 256) # 1024, 512
         #self.linear2_3 = nn.Linear(256, 128)
 
-        do = 0.5
+        do = 0.3
         self.dropout1 = nn.Dropout(do)
         self.dropout2 = nn.Dropout(do)
         print("dropout: {}".format(do))
@@ -53,7 +53,7 @@ class Net(nn.Module):
         if not data_type or data_type == "peps":
             for peps in data[1:]:
                 embeds = self.embedding(peps)
-                lstm_out, hidden = self.lstm(embeds, hidden)
+                lstm_out, _ = self.lstm(embeds, hidden)
                 lstm_out = lstm_out[:, -1, :]
                 out = lstm_out.contiguous().view(-1, self.hidden_lstm_dim * 2)
 

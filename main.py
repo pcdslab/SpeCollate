@@ -99,7 +99,8 @@ def run_par(rank, world_size):
     model_ = model.Net(vocab_size, output_size=512, embedding_dim=256,
                         hidden_lstm_dim=512, # 1024 
                         lstm_layers=1).to(rank)
-    model_ = nn.parallel.DistributedDataParallel(model_, device_ids=[rank])
+    model_ = torch.load("/oasis/projects/nsf/wmu101/mtari008/DeepSNAP/models/hcd/model-all-42-0.3-0.0005.pt")
+    #model_ = nn.parallel.DistributedDataParallel(model_, device_ids=[rank])
     optimizer = optim.Adam(model_.parameters(), lr=lr, weight_decay=weight_decay)
     #optimizer = optim.SGD(model_.parameters(), lr=lr)
 
@@ -116,7 +117,7 @@ def run_par(rank, world_size):
         trainmodel.test(model_, rank, test_loader, triplet_loss)
 
         if epoch % 2 == 0 and rank == 0:
-            torch.save(model_, 'models/hcd/model-{}.pt'.format(epoch))
+            torch.save(model_, 'models/hcd/model-all-mass-{}-0.3-0.0001.pt'.format(epoch))
         
         dist.barrier()
     
@@ -124,7 +125,7 @@ def run_par(rank, world_size):
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12345'
+    os.environ['MASTER_PORT'] = '12346'
     dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
     # dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
 

@@ -62,7 +62,7 @@ def train(model, device, train_loader, triplet_loss, optimizer):
             
             optimizer.zero_grad()
             
-            Q, P, D, h = model(data[:-1], h)
+            Q, P, D, _ = model(data[:-1], h)
 
             loss, QxPD = snap_loss2(counts, P, Q, D[:d_len], triplet_loss, device)
 
@@ -111,7 +111,7 @@ def test(model, device, test_loader, triplet_loss):
             data[2] = data[2].to(device)
             counts = data[3]
             
-            Q, P, D, h = model(data[:-1], h)
+            Q, P, D, _ = model(data[:-1], h)
 
             loss, QxPD = snap_loss2(counts, P, Q, D[:d_len], triplet_loss, device)
             
