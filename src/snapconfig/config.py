@@ -24,7 +24,6 @@ Ignore = ["U", "X"]
 Mods = [{"mod_char": "p", "aas": ["nt", "S", "T", "Y"]}
         # {"mod_char": "o", "aas": ["nt", "M"]}
         ]
-
 H2O = 18.015
 NH3 = 17.031
 PROTON = 1.00727647
