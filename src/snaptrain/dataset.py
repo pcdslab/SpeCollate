@@ -12,7 +12,7 @@ from src.snapconfig import config
 
 class LabeledSpectra(data.Dataset):
     'Characterizes a dataset for PyTorch'
-    def __init__(self, dir_path, pep_file_name, spec_file_names_lists, means, stds):
+    def __init__(self, dir_path, pep_file_name, spec_file_names_lists):
         'Initialization'
         
         in_path = Path(dir_path)
@@ -33,6 +33,8 @@ class LabeledSpectra(data.Dataset):
         
         self.pep_file_names = pep_file_name
         self.spec_file_names_lists = spec_file_names_lists # a list of lists containing spectra for each peptide
+        means = np.load(join(dir_path, "means.npy"))
+        stds = np.load(join(dir_path, "stds.npy"))
         self.means = torch.from_numpy(means).float()
         self.stds = torch.from_numpy(stds).float()
 

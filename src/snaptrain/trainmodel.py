@@ -45,7 +45,7 @@ def train(model, device, train_loader, triplet_loss, optimizer):
     accurate_labels = 0
     all_labels = 0
     l = 0
-    with progressbar.ProgressBar(max_value=len(train_loader)) as bar:
+    with progressbar.ProgressBar(max_value=len(train_loader)) as p_bar:
         for idx, data in enumerate(train_loader):
             h = tuple([e.data for e in h])
             q_len = len(data[0])
@@ -78,7 +78,7 @@ def train(model, device, train_loader, triplet_loss, optimizer):
             accurate_labels = accurate_labels + torch.sum(QxPD.argmin(1) == seq)
             
             all_labels = all_labels + len(Q)
-            bar.update(idx)
+            p_bar.update(idx)
     
     accuracy = 100. * float(accurate_labels) / all_labels
     train_accuracy.append(accuracy)

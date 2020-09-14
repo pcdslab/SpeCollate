@@ -43,8 +43,6 @@ def run_par(rank, world_size):
 
     listing_path = join(in_tensor_dir, 'pep_spec.pkl')
     pep_file_names, spec_file_names_lists = load_file_names(filt=filt, listing_path=listing_path)
-    means = np.load(join(in_tensor_dir, "means.npy"))
-    stds = np.load(join(in_tensor_dir, "stds.npy"))
     
     split_rand_state = rand.randint(0, 1000)
     trains, tests = train_test_split(
@@ -53,8 +51,8 @@ def run_par(rank, world_size):
 
     train_peps, train_specs = map(list, zip(*trains))
     test_peps, test_specs = map(list, zip(*tests))
-    train_dataset = dataset.LabeledSpectra(in_tensor_dir, train_peps, train_specs, means, stds)
-    test_dataset  = dataset.LabeledSpectra(in_tensor_dir, test_peps, test_specs, means, stds)
+    train_dataset = dataset.LabeledSpectra(in_tensor_dir, train_peps, train_specs)
+    test_dataset  = dataset.LabeledSpectra(in_tensor_dir, test_peps, test_specs)
 
     vocab_size = train_dataset.vocab_size
 
@@ -83,7 +81,7 @@ def run_par(rank, world_size):
         shuffle=True)
 
     print("Learning without DeepNovo dataset.")
-    lr = 0.0005
+    lr = 0.0001
     print("Learning Rate: {}".format(lr))
     num_epochs = 500
     weight_decay = 0.0001
@@ -99,8 +97,8 @@ def run_par(rank, world_size):
     model_ = model.Net(vocab_size, output_size=512, embedding_dim=256,
                         hidden_lstm_dim=512, # 1024 
                         lstm_layers=1).to(rank)
-    model_ = torch.load("/oasis/projects/nsf/wmu101/mtari008/DeepSNAP/models/hcd/model-all-42-0.3-0.0005.pt")
-    #model_ = nn.parallel.DistributedDataParallel(model_, device_ids=[rank])
+    #model_ = torch.load("./models/hcd/model-all-mass-72-0.3-0.0001.pt")
+    model_ = nn.parallel.DistributedDataParallel(model_, device_ids=[rank])
     optimizer = optim.Adam(model_.parameters(), lr=lr, weight_decay=weight_decay)
     #optimizer = optim.SGD(model_.parameters(), lr=lr)
 
@@ -117,7 +115,7 @@ def run_par(rank, world_size):
         trainmodel.test(model_, rank, test_loader, triplet_loss)
 
         if epoch % 2 == 0 and rank == 0:
-            torch.save(model_, 'models/hcd/model-all-mass-{}-0.3-0.0001.pt'.format(epoch))
+            torch.save(model_, 'models/hcd/model-all-mass-{}-0.4-0.0001.pt'.format(epoch))
         
         dist.barrier()
     
@@ -142,7 +140,7 @@ def apply_filter(filt, file_name):
         print(file_name)
         print(file_parts)
     
-    if ((filt["charge"] == 0 or charge <= filt["charge"])
+    if ((filt["charge"] == 0 or charge == filt["charge"]) # change this back to <=
         and (mods <= filt["mods"])):
         return True
     
