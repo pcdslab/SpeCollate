@@ -84,7 +84,7 @@ def run_par(rank, world_size):
     lr = 0.0001
     print("Learning Rate: {}".format(lr))
     num_epochs = 500
-    weight_decay = 0.0001
+    weight_decay = 0.00005
     print("Weigh Decay: {}".format(weight_decay))
     margin = 0.2
 
@@ -115,7 +115,7 @@ def run_par(rank, world_size):
         trainmodel.test(model_, rank, test_loader, triplet_loss)
 
         if epoch % 2 == 0 and rank == 0:
-            torch.save(model_, 'models/hcd/model-all-mass-{}-0.4-0.0001.pt'.format(epoch))
+            torch.save(model_, 'models/hcd/model-all-mass-{}-0.4-0.00005.pt'.format(epoch))
         
         dist.barrier()
     
@@ -123,7 +123,7 @@ def run_par(rank, world_size):
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12346'
+    os.environ['MASTER_PORT'] = '12348'
     dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
     # dist.init_process_group(backend='nccl', world_size=world_size, rank=rank)
 
