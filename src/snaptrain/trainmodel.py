@@ -45,40 +45,40 @@ def train(model, device, train_loader, triplet_loss, optimizer):
     accurate_labels = 0
     all_labels = 0
     l = 0
-    with progressbar.ProgressBar(max_value=len(train_loader)) as p_bar:
-        for idx, data in enumerate(train_loader):
-            h = tuple([e.data for e in h])
-            q_len = len(data[0])
-            p_len = len(data[1])
-            d_len = len(data[2])
-            if p_len > d_len:
-                seq_len = config.get_config(section='ml', key='pep_seq_len')
-                zero_pad = torch.zeros(p_len - d_len, seq_len, dtype=torch.long)
-                data[2] = torch.cat((data[2], zero_pad))
-            data[0] = data[0].to(device)
-            data[1] = data[1].to(device)
-            data[2] = data[2].to(device)
-            counts = data[3]
-            
-            optimizer.zero_grad()
-            
-            Q, P, D, _ = model(data[:-1], h)
+    # with progressbar.ProgressBar(max_value=len(train_loader)) as p_bar:
+    for idx, data in enumerate(train_loader):
+        h = tuple([e.data for e in h])
+        q_len = len(data[0])
+        p_len = len(data[1])
+        d_len = len(data[2])
+        if p_len > d_len:
+            seq_len = config.get_config(section='ml', key='pep_seq_len')
+            zero_pad = torch.zeros(p_len - d_len, seq_len, dtype=torch.long)
+            data[2] = torch.cat((data[2], zero_pad))
+        data[0] = data[0].to(device)
+        data[1] = data[1].to(device)
+        data[2] = data[2].to(device)
+        counts = data[3]
+        
+        optimizer.zero_grad()
+        
+        Q, P, D, _ = model(data[:-1], h)
 
-            loss, QxPD = snap_loss2(counts, P, Q, D[:d_len], triplet_loss, device)
+        loss, QxPD = snap_loss2(counts, P, Q, D[:d_len], triplet_loss, device)
 
-            loss.backward()
-            
-            nn.utils.clip_grad_norm_(model.parameters(), 5)
-            
-            optimizer.step()
-            
-            seq, _ = get_index(counts, q_len)
-            seq = torch.LongTensor(seq).to(device)
-            # QxP contains the distance of each spectrum from each peptide.
-            accurate_labels = accurate_labels + torch.sum(QxPD.argmin(1) == seq)
-            
-            all_labels = all_labels + len(Q)
-            p_bar.update(idx)
+        loss.backward()
+        
+        nn.utils.clip_grad_norm_(model.parameters(), 5)
+        
+        optimizer.step()
+        
+        seq, _ = get_index(counts, q_len)
+        seq = torch.LongTensor(seq).to(device)
+        # QxP contains the distance of each spectrum from each peptide.
+        accurate_labels = accurate_labels + torch.sum(QxPD.argmin(1) == seq)
+        
+        all_labels = all_labels + len(Q)
+        # p_bar.update(idx)
     
     accuracy = 100. * float(accurate_labels) / all_labels
     train_accuracy.append(accuracy)

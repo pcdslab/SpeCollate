@@ -21,6 +21,7 @@ Untitled.ipynb
 *.tar.gz
 out
 /models
+/expanse-out
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
