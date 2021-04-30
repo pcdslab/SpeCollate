@@ -36,7 +36,8 @@ def run_par(rank, world_size):
     test_size   = config.get_config(section='ml', key='test_size')
 
     msp_dir     = config.get_config(section='preprocess', key='msp_dir')
-    in_tensor_dir = config.get_config(section='preprocess', key='in_tensor_dir')
+    # in_tensor_dir = config.get_config(section='preprocess', key='in_tensor_dir')
+    in_tensor_dir = "/scratch/mtari008/job_" + os.environ['SLURM_JOB_ID'] + "/train_lstm_mods_mass_hcd_all"
     # msp_dir = "/DeepSNAP/data/msp-labeled/"
     # in_tensor_dir = "/scratch/train_lstm/"
     print(in_tensor_dir)
@@ -81,7 +82,7 @@ def run_par(rank, world_size):
         shuffle=True)
 
     print("Learning without DeepNovo dataset.")
-    lr = 0.0001
+    lr = 0.01
     print("Learning Rate: {}".format(lr))
     num_epochs = 500
     weight_decay = 0.00005
