@@ -18,8 +18,8 @@ Below sections separately explain setup for training and search operation. You c
 
 ### Setup
 
-1. Download the [specollate.tar.gz](link) file and extract the contents using the following command:
-'tar -xzf specollate.tar.gz'
+1. Download the [specollate.tar.gz](link) file and extract the contents using the following command:  
+`tar -xzf specollate.tar.gz`
 The extracted directory contains multiple files including 
     - specollate-train: This is the executable for training SpeCollate.
     - specollate-search: This is the executable for database.
@@ -27,8 +27,8 @@ The extracted directory contains multiple files including
     - models (dir): Contains the pretrained model. New models will also be stored here.
     - percolator (dir): Percolator input (.pin) files be placed here after the search is complete.
 
-2. Download the preprocessed data for training ([specollate-training-data.tar.gz](link)) and extract the contents using:
-'tar -xzf specollate-training-data.tar.gz'
+2. Download the preprocessed data for training ([specollate-training-data.tar.gz](link)) and extract the contents using:  
+`tar -xzf specollate-training-data.tar.gz`
 
 3. Open the config.ini file from step 1 in your favorite text editor and set the following parameters:
     - in_tensor_dir in [preprocess] section: Absolute path of the decompressed file from step 2.
