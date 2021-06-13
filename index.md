@@ -16,6 +16,8 @@ Below sections separately explain setup for training and search operation. You c
 - At least 120GBs of system memory and 10 CPU cores.
 - Cuda enabled GPU with at least 12 GBs of memory. Cuda Toolkit 10.0 (or later).
 
+### Setup
+
 1. Download the [specollate.tar.gz](link) file and extract the contents using the following command:
 'tar -xzf specollate.tar.gz'
 The extracted directory contains multiple files including 
