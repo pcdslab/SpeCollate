@@ -107,11 +107,8 @@ crux percolator target.pin decoy.pin --list-of-files T --overwrite T
 
 <p>
  If you use our tool, please cite our work:<br>  
-    
- ```
- Tariq, Muhammad Usman, and Fahad Saeed. "SpeCollate: Deep cross-modal similarity network for mass spectrometry data based
- peptide deductions." PloS one 16.10 (2021): e0259349.
- ```  
+ 
+ [1]. Tariq, Muhammad Usman, and Fahad Saeed. "SpeCollate: Deep cross-modal similarity network for mass spectrometry data based peptide deductions." PloS one 16.10 (2021): e0259349.
     
  <br>
  For questions, suggestions, or technical problems, contact:<br>
