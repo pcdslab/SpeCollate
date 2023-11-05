@@ -1,0 +1,24 @@
+{
+    "os": "Linux-5.4.0-110-generic-x86_64-with-glibc2.31",
+    "python": "3.9.12",
+    "heartbeatAt": "2022-09-16T20:22:43.824720",
+    "startedAt": "2022-09-16T20:22:43.388083",
+    "docker": null,
+    "gpu": "NVIDIA RTX A6000",
+    "gpu_count": 2,
+    "cpu_count": 40,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/disk/dragon-storage/homes/mtari008/DeepAtles/run_train.py",
+    "codePath": "run_train.py",
+    "git": {
+        "remote": "git@github.com:Usman095/DeepAtles.git",
+        "commit": "71ba9865c176be90b7ff341c88592dfad495d382"
+    },
+    "email": null,
+    "root": "/disk/dragon-storage/homes/mtari008/DeepAtles",
+    "host": "dragon-compute-01",
+    "username": "mtari008",
+    "executable": "/lclhome/mtari008/miniconda3/bin/python3"
+}

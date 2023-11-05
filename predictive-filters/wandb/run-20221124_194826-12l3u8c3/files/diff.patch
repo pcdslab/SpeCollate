@@ -1,0 +1,70 @@
+diff --git a/run_train.py b/run_train.py
+index 1740bcc..94d8a60 100755
+--- a/run_train.py
++++ b/run_train.py
+@@ -35,7 +35,7 @@ test_accuracy = []
+ 
+ 
+ def run_par(rank, world_size):
+-    model_name = "pt-mass-ch"  # first k is spec size second is batch size
++    model_name = "nist-massive-deepnovo-mass-ch"  # first k is spec size second is batch size
+     print("Training {}.".format(model_name))
+     wandb.init(project="deepatles", entity="pcds")
+     wandb.run.name = "{}-{}-{}".format(model_name, os.environ['SLURM_JOB_ID'], wandb.run.id)
+@@ -53,7 +53,7 @@ def run_par(rank, world_size):
+     weighted_sampler = WeightedRandomSampler(weights=weights_all, num_samples=len(weights_all), replacement=True)
+     train_loader = torch.utils.data.DataLoader(
+         dataset=train_dataset, num_workers=0, collate_fn=psm_collate,
+-        batch_size=batch_size, shuffle=True
++        batch_size=batch_size, sampler=weighted_sampler,
+     )
+ 
+     val_loader = torch.utils.data.DataLoader(
+diff --git a/src/atlestrain/dataset.py b/src/atlestrain/dataset.py
+index 9ba6f2d..1e8fba7 100644
+--- a/src/atlestrain/dataset.py
++++ b/src/atlestrain/dataset.py
+@@ -34,6 +34,7 @@ class SpectraDataset(data.Dataset):
+         self.max_pep_len = config.get_config(section='ml', key='max_pep_len')
+         self.min_pep_len = config.get_config(section='ml', key='min_pep_len')
+         self.spec_size = config.get_config(section='input', key='spec_size')
++        self.max_clvs = config.get_config(section='ml', key='max_clvs')
+ 
+         self.mzs = []
+         self.ints = []
+@@ -52,12 +53,20 @@ class SpectraDataset(data.Dataset):
+             self.is_mods.append(spec_data[5])
+             self.miss_cleavs.append(spec_data[6])
+ 
+-        num_classes = self.max_pep_len - self.min_pep_len + 1
++        # num_classes = self.max_pep_len - self.min_pep_len + 1
++        # class_counts = [0] * num_classes
++        # for cla in self.lens:
++        #     class_counts[cla] += 1
++        # class_weights = 1. / torch.FloatTensor(class_counts)
++        # self.class_weights_all = class_weights[self.lens]
++
++        num_classes = (self.max_clvs + 1) * 2
+         class_counts = [0] * num_classes
+-        for cla in self.lens:
+-            class_counts[cla] += 1
++        for clv, mod in zip(self.max_clvs, self.is_mods):
++            class_counts[clv * 2 + mod] += 1
++
+         class_weights = 1. / torch.FloatTensor(class_counts)
+-        self.class_weights_all = class_weights[self.lens]
++        self.class_weights_all = class_weights[[clv * 2 + mod for clv, mod in zip(self.miss_cleavs, self.is_mods)]]
+         
+         print('dataset size: {}'.format(len(data)))
+         
+diff --git a/train.sh b/train.sh
+index fbfb8aa..c45b24d 100755
+--- a/train.sh
++++ b/train.sh
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-#SBATCH --job-name="atles-hpg-atles"
++#SBATCH --job-name="atles-dragon"
+ #SBATCH --output="atles-out/bak/atles.%j.%N.out"
+ #SBATCH --nodes=1
+ #SBATCH --gpus=1

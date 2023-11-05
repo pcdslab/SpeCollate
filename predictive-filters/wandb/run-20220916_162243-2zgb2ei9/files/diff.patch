@@ -1,0 +1,73 @@
+diff --git a/config.ini b/config.ini
+index b277a33..1e0448a 100755
+--- a/config.ini
++++ b/config.ini
+@@ -7,17 +7,17 @@
+ # in_tensor_dir : /scratch/mtari008/37154933/pred-full-deepnovo/
+ 
+ # For expanse
+-in_tensor_dir : /blue/fsaeed/mtariq1/job_2436627/nist_massiv_80k_ch_graymass/
++in_tensor_dir : /lclhome/mtari008/job_2436627/nist_massiv_80k_ch_graymass/
+ 
+ ############ INPUT PARAMETERS ############
+ [input]
+ 
+ # file paths
+-msp_files : /blue/fsaeed/mtariq1/DeepSNAP/data/msp
+-mgf_dir : /blue/fsaeed/mtariq1/data/deepatles/proteome-tools
+-prep_dir : /blue/fsaeed/mtariq1/data/deepatles/train_ready/pt-5k-ch1-3-len7-30-200-mod-mass
+-; prep_dir : /blue/fsaeed/mtariq1/data/deepatles/train_ready/pt-5k-ch1-3-len7-20-200-mod #proteome tools data most models are trained on.
+-val_dir : /blue/fsaeed/mtariq1/data/deepatles/validate/pt-5k-ch1-3-len7-30-200-mod-mass
++msp_files : /lclhome/mtari008/DeepSNAP/data/msp
++mgf_dir : /lclhome/mtari008/data/deepatles/proteome-tools
++prep_dir : /lclhome/mtari008/data/deepatles/train_ready/pt-5k-ch1-3-len7-30-200-mod-mass
++; prep_dir : /lclhome/mtari008/data/deepatles/train_ready/pt-5k-ch1-3-len7-20-200-mod #proteome tools data most models are trained on.
++val_dir : /lclhome/mtari008/data/deepatles/validate/pt-5k-ch1-3-len7-30-200-mod-mass
+ 
+ # The array size to store a spectrum.
+ spec_size : 50000
+@@ -38,9 +38,9 @@ master_port : 12346
+ 
+ ############ DATABASE SEARCH PARAMETERS ############
+ [search]
+-mgf_dir : /blue/fsaeed/mtariq1/data/deepatles/test_db_search/
+-prep_path : /blue/fsaeed/mtariq1/data/deepatles/prep_spectra
+-pep_dir : /blue/fsaeed/mtariq1/data/deepatles/peps/
++mgf_dir : /lclhome/mtari008/data/deepatles/test_db_search/
++prep_path : /lclhome/mtari008/data/deepatles/prep_spectra
++pep_dir : /lclhome/mtari008/data/deepatles/peps/
+ out_pin_dir : percolator
+ 
+ # Batch sizes for forward pass through the network
+diff --git a/read_spectra.py b/read_spectra.py
+index 62ae51b..eb6cfd4 100644
+--- a/read_spectra.py
++++ b/read_spectra.py
+@@ -4,7 +4,7 @@ import shutil
+ from os import listdir
+ import re
+ import math
+-import pickle
++import pickle 
+ 
+ import numpy as np
+ from sklearn.model_selection import train_test_split
+diff --git a/train.sh b/train.sh
+index e063fb0..fbfb8aa 100755
+--- a/train.sh
++++ b/train.sh
+@@ -1,11 +1,10 @@
+ #!/bin/bash
+ #SBATCH --job-name="atles-hpg-atles"
+ #SBATCH --output="atles-out/bak/atles.%j.%N.out"
+-#SBATCH --partition=gpu
+ #SBATCH --nodes=1
+-#SBATCH --gpus=a100:1
+-#SBATCH --ntasks-per-node=32
+-#SBATCH --mem=250gb
++#SBATCH --gpus=1
++#SBATCH --ntasks-per-node=10
++#SBATCH --mem=92gb
+ #SBATCH --account=fsaeed
+ #SBATCH --no-requeue
+ #SBATCH -t 72:00:00
