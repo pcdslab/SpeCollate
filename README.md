@@ -61,7 +61,7 @@ The below sections explain the setup for retraining the model.
 
 ### Retrain the Model
 
-1. Download the [specollate.tar.gz](https://drive.google.com/uc?export=download&id=1iAR4a6qQQyS2pDFMRqCd7Jaofsmxwdsp) file and extract the contents using the following command:  
+1. Download the [specollate.tar.gz](https://drive.google.com/file/d/1GkJw8xLl-U-1cTSnOMcKdZhsHd2LWfnb/view?usp=sharing) file and extract the contents using the following command:  
 `tar -xzf specollate.tar.gz`  
 The extracted directory contains multiple files, including:
     - `specollate-train`: This is the executable for training SpeCollate.
