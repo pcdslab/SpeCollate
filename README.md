@@ -95,9 +95,9 @@ The extracted directory contains multiple files, including:
     - Set database search parameters e.g. `precursor_mass_tolerance` etc.
 
 5. Execute the specollate_search file:  
-`./specollate_search`  
+`python run_search.py`  
 If you want to use the preprocessed spectra from a previous run, use the `-p False` flag:  
-`./specollate_search -p False`
+`python run_search.py -p False`
 
 6. Once the search is complete; you can analyze the percolator files using the crux percolator tool:
 ```shell
