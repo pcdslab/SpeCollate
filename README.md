@@ -45,71 +45,76 @@ Tuned hyperparameters are given in table 1 below and the ranges for which their 
 | FC Layers      | 2      | 1, 2, 3                                              |
 | BiLSTM Layers  | 2      | 1, 2, 3, 4                                           |
 
-SpeCollate is available as a standalone executable that can be downloaded and run on a Linux server with a Cuda-enabled GPU.
 
-Two different executables are included in the downloadable specollate.tar.gz file; 1) specollate_train for retraining a model and 2) specollate_search for performing database search using a trained model. A pre-trained model is provided within the download file.
 
-The below sections explain the setup for retraining the model.
-
-### Prerequisites
-
+## System Requirements
 - A Computer with Ubuntu 16.04 (or later) or CentOS 8.1 (or later).
-- At least 120GBs of system memory and 10 CPU cores.
-- Cuda enabled GPU with at least 12 GBs of memory. Cuda Toolkit 10.0 (or later).
+- Cuda enabled GPU with at least 12 GBs of memory.
 - OpenMS tool for creating custom peptide database. (Optional)
 - Crux for FDR analysis using its percolator option.
 
-### Retrain the Model
+## Installation Guide
 
-1. Download the [specollate.tar.gz](https://drive.google.com/file/d/1GkJw8xLl-U-1cTSnOMcKdZhsHd2LWfnb/view?usp=sharing) file and extract the contents using the following command:  
-`tar -xzf specollate.tar.gz`  
-The extracted directory contains multiple files, including:
-    - `specollate-train`: This is the executable for training SpeCollate.
-    - `specollate-search`: This is the executable for database search.
-    - `config.ini`: Parameter file for training and searching.
-    - `models (dir)`: Contains the pre-trained model. New models will also be stored here.
-    - `percolator (dir)`: Percolator input (.pin) files be placed here after the search is complete.
+### Install Anaconda
+[Step by Step Guide to Install Anaconda](https://docs.anaconda.com/anaconda/install/)
 
-2. Download the preprocessed data for training ([here](https://drive.google.com/uc?export=download&id=10bZbMdc2eN_l4ToJd6ruzNX7t6wIUfHw)) and extract the contents using:  
-`tar -xzf specollate-training-data.tar.gz`
+### Fork the repository
+- Fork the repository to your own account.
+- Clone your fork to your machine. 
 
-3. Open the config.ini file from step 1 in your favorite text editor and set the following parameters:
-    - `in_tensor_dir` in [preprocess] section: Absolute path of the decompressed file from step 2.
-    - `model_name` in [ml] section: The name by which to wish to save the trained model file.
-    - other parameters in the [ml] section: You can adjust different hyperparameters in the [ml] section, e.g., learning_rate, dropout, etc.
+### Create Conda Enviornment
+`cd SpeCollate`
 
-4. Execute the specollate_train file.  
-`./specollate_train`
+`conda env create --file specollate_env.yml` (It would take some minutes to install dependencis)
+### Activate Enviornment
+`conda activate specollate`
 
-### Database Search
+## Demo (Database Search)
 
-1. Same as step 1 in the **Previous** section.
-2. Download one of the [mgf files](https://drive.google.com/drive/folders/1dvvbYjtz9PrFcMzB-VvtGbrWNX-hl6Io?usp=sharing). Or you can use your own spectra files in mgf format.
-3. Download the [human peptide database](https://drive.google.com/uc?export=download&id=1pOBYkCFl66Yk1DjSIw6l9RRi7f6iSXSf). You can provide your own peptide database file created using the Digestor tool provided by [OpenMS](https://www.openms.de/download/openms-binaries/).
+Our end-to-end pipeline uses specollate model. 
+
+1. Use mgf files for spectra in `sample_data/mgfs`. Or you can use your own spectra files in mgf format.
+2. Use peptidome subset in `sample_data/peptides`. You can provide your own peptide database file created using the Digestor tool provided by [OpenMS](https://www.openms.de/download/openms-binaries/).
+3. Download the weights for specollate model [here](https://github.com/pcdslab/ProteoRift/releases/tag/V1.0.0) under the Assets section.
 4. Set the following parameters in the [search] section of the `config.ini` file:
-    - `model_name`: Name of the model to be used. The model should be in the `/models` directory.
-    - `mgf_dir`: Absolute path to the directory containing mgf files to be searched.
+    - `model_name`: Absolute path to the specollate model (called *specollate_model_weights.pt* that you downloaded from [here](https://github.com/pcdslab/ProteoRift/releases/tag/V1.0.0) under the Assets section).
+    - `mgf_dir`: Absolute path to the directory containing mgf files(Spectra) to be searched.
     - `prep_dir`: Absolute path to the directory where preprocessed mgf files will be saved.
     - `pep_dir`: Absolute path to the directory containing peptide database.
-    - `out_pin_dir`: Absolute path to a directory where percolator pin files will be saved. The directory must exist; otherwise, the process will exit with an error.
-    - Set database search parameters e.g. `precursor_mass_tolerance` etc.
+    - `out_pin_dir`: Absolute path to a directory where percolator pin files will be saved.
+    - Set database search parameters
 
-5. Execute the specollate_search file:  
-`python run_search.py`  
-If you want to use the preprocessed spectra from a previous run, use the `-p False` flag:  
-`python run_search.py -p False`
+6. Run `python run_search.py`. It would preprocess, generate the embeddings for spectra and peptides and it would perform the search. It would generate the output(e.g target.pin, decoy.pin).
 
-6. Once the search is complete; you can analyze the percolator files using the crux percolator tool:
+#### Expected Output
+The database search would output two files (target.pin, decoy.pin). `target.pin` contains the information about Target Peptide Spectrum Match. `decoy.pin` contains the information about Decoy Peptide Spectrum Match. Both .pin file would have the features given below for Peptide-Spectrum Match.
+
+![alt text](PSM.png)
+
+ Once the search is complete and .pin are generated; you can analyze the percolator files using the crux percolator tool:
 ```shell
 cd <out_pin_dir>
 crux percolator target.pin decoy.pin --list-of-files T --overwrite T
 ```
+##### Time of Execution
+Execution time is dependent on many factors including your machines, size of the data, size of the spectra, and what kind of search-space reduction was achieved. As an example, for a 3.9GB database our proposed method completes the search in 20.36 hours. 
 
-<p>
- If you use our tool, please cite our work:<br>  
+## Retrain the Model 
+
+You can retrain the SpeCollate model if you wish. 
+1. Prepare the spectra data (mgf format).
+2. Open the config.ini file in your favorite text editor and set the following parameters in the input section:
+    - `mgf_dir`: Absolute path of the mgf files.
+    - `prep_dir` Absolute path to the directory where preprocessed mgf files will be saved.
+    - other parameters in the [ml] section: You can adjust different hyperparameters in the [ml] section, e.g., learning_rate, dropout, etc.
+3. Setup the [wandb](https://wandb.ai/site) account. Create a project name. Then login to the project using `wandb login.` It would store the logs for training.
+5. Run the specollate_train file `python run_train.py`. The model weights would be saved in an output dir.
+
+
+
+ <b>If you use our tool, please cite our work:</b><br>  
  
  [1]. Tariq, Muhammad Usman, and Fahad Saeed. "SpeCollate: Deep cross-modal similarity network for mass spectrometry data based peptide deductions." PloS one 16.10 (2021): e0259349.
-    
  <br>
  For questions, suggestions, or technical problems, contact:<br>
  <a href = "mailto: mtari008@fiu.edu">mtari008@fiu.edu</a>
