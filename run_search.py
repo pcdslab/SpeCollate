@@ -34,6 +34,9 @@ if __name__ == '__main__':
     pep_dir     = config.get_config(key="pep_dir", section="search")
     out_pin_dir = config.get_config(key="out_pin_dir", section="search")
 
+    if not os.path.exists(out_pin_dir):
+        os.mkdir(out_pin_dir)
+
     # scratch_loc = "/scratch/mtari008/job_" + os.environ['SLURM_JOB_ID'] + "/"
 
     # mgf_dir     = scratch_loc + mgf_dir
@@ -75,7 +78,7 @@ if __name__ == '__main__':
     # snap_model.load_state_dict(torch.load('models/32-embed-2-lstm-SnapLoss2-noch-3k-1k-152.pt')['model_state_dict'])
     # below one has 26975 identified peptides.
     # snap_model.load_state_dict(torch.load('models/512-embed-2-lstm-SnapLoss-noch-80k-nist-massive-52.pt')['model_state_dict'])
-    model_name = join("./models", config.get_config(key="model_name", section="search"))
+    model_name =  config.get_config(key="model_name", section="search")
     snap_model.load_state_dict(torch.load(model_name)['model_state_dict'])
     snap_model = snap_model.module
     snap_model.eval()
