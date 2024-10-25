@@ -117,5 +117,5 @@ You can retrain the SpeCollate model if you wish.
  [1]. Tariq, Muhammad Usman, and Fahad Saeed. "SpeCollate: Deep cross-modal similarity network for mass spectrometry data based peptide deductions." PloS one 16.10 (2021): e0259349.
  <br>
  For questions, suggestions, or technical problems, contact:<br>
- <a href = "mailto: mtari008@fiu.edu">mtari008@fiu.edu</a>
+ <a href = "mailto: fsaeed@fiu.edu">fsaeed@fiu.edu</a>
 </p>
